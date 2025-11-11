@@ -1,9 +1,12 @@
-/*******************************************************************************************************************
- * Objetivo ==> Api referente ao projeto de adoçao de pets
- * Data ==> 06/11/2025
- * Autor ==> Betriz Palermo
- * Versão ==> 1.0
+/*****************************************************************************************
+ * Objetivo --> Arquivo responsável pelas configurações de rotas da API
+ * Data --> 06/11/2024
+ * Autor --> Sistema de Agendamentos
  * 
+ * 
+ * 
+ * 
+ *  * 
  * Observação:
  *      ****** PARA CONFIGURAR E INSTALAR A API, PRECISAMOS DAS SEGUINTE BIBLIOTECA ********
  *                      express                  npm install express --save
@@ -24,7 +27,8 @@
  * ************************
  * 
  * POST E PUT PRECISAM DO BodyParserJson para funcionar
- **********************************************************************************************************************/
+ **
+ ****************************************************************************************/
 
 const express = require('express');
 const cors = require('cors');
@@ -46,11 +50,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Importando os Controllers
-const clienteController = require('./controller/ClienteController.js');
-const servicoController = require('./controller/ServicoController.js');
-const profissionalController = require('./controller/ProfissionalController.js');
-const agendamentoController = require('./controller/AgendamentoController.js');
-const horarioController = require('./controller/HorarioDisponivelController.js');
+const clienteController = require('./controller/controllerClientes.js');
+const servicoController = require('./controller/controllerServiço.js');
+const profissionalController = require('./controller/controllerProfissional.js');
+const agendamentoController = require('./controller/controllerAgendamento.js');
+const horarioController = require('./controller/controllerHorarios.js');
 
 /************************************************************************************************
  * ROTAS DE CLIENTES

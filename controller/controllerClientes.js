@@ -1,34 +1,31 @@
 /*****************************************************************************************
- * Objetivo --> Controller responsavel pela manipulação dos dados referentes a horários disponíveis
+ * Objetivo --> Controller responsavel pela manipulação dos dados referentes a clientes
  * Data --> 06/11/2024
  * Autor --> Sistema de Agendamentos
+
  ****************************************************************************************/
 
-const horarioDAO = require('../dao/HorarioDisponivelDAO.js');
+const clienteDAO = require('../dao/clienteDAO.js');
 const message = require('../config/config.js');
 
 // ====================== POST ======================
-const createHorarioDisponivel = async function (dadosBody, contentType) {
+const createCliente = async function (dadosBody, contentType) {
     let status = false;
     let status_code;
     let mensagem = {};
 
     if (contentType === 'application/json') {
-        if (
-            dadosBody.dia_semana == '' || dadosBody.dia_semana == undefined ||
-            dadosBody.horario_inicio == '' || dadosBody.horario_inicio == undefined ||
-            dadosBody.horario_fim == '' || dadosBody.horario_fim == undefined
-        ) {
+        if (dadosBody.nome == '' || dadosBody.nome == undefined) {
             status_code = 400;
             mensagem.message = message.ERROR_REQUIRED_FIELDS;
         } else {
-            let novoHorario = await horarioDAO.insertHorarioDisponivel(dadosBody);
+            let novoCliente = await clienteDAO.insertCliente(dadosBody);
 
-            if (novoHorario) {
+            if (novoCliente) {
                 status = true;
                 status_code = 201;
                 mensagem.message = message.SUCCESS_CREATED_ITEM;
-                mensagem.horario = novoHorario;
+                mensagem.cliente = novoCliente;
             } else {
                 status_code = 500;
                 mensagem.message = message.ERROR_INTERNAL_SERVER;
@@ -43,12 +40,12 @@ const createHorarioDisponivel = async function (dadosBody, contentType) {
         status: status,
         status_code: status_code,
         message: mensagem.message,
-        horario: mensagem.horario
+        cliente: mensagem.cliente
     };
 }
 
 // ====================== PUT ======================
-const updateHorarioDisponivel = async function (dadosBody, contentType) {
+const updateCliente = async function (dadosBody, contentType) {
     let status = false;
     let status_code;
     let mensagem = {};
@@ -56,15 +53,12 @@ const updateHorarioDisponivel = async function (dadosBody, contentType) {
     if (contentType === 'application/json') {
         if (
             dadosBody.id == '' || dadosBody.id == undefined ||
-            dadosBody.dia_semana == '' || dadosBody.dia_semana == undefined ||
-            dadosBody.horario_inicio == '' || dadosBody.horario_inicio == undefined ||
-            dadosBody.horario_fim == '' || dadosBody.horario_fim == undefined ||
-            dadosBody.disponivel == '' || dadosBody.disponivel == undefined
+            dadosBody.nome == '' || dadosBody.nome == undefined
         ) {
             status_code = 400;
             mensagem.message = message.ERROR_REQUIRED_FIELDS;
         } else {
-            let resultado = await horarioDAO.updateHorarioDisponivel(dadosBody);
+            let resultado = await clienteDAO.updateCliente(dadosBody);
 
             if (resultado) {
                 status = true;
@@ -88,7 +82,7 @@ const updateHorarioDisponivel = async function (dadosBody, contentType) {
 }
 
 // ====================== DELETE ======================
-const deleteHorarioDisponivel = async function (id) {
+const deleteCliente = async function (id) {
     let status = false;
     let status_code;
     let mensagem = {};
@@ -97,15 +91,15 @@ const deleteHorarioDisponivel = async function (id) {
         status_code = 400;
         mensagem.message = message.ERROR_INVALID_ID;
     } else {
-        let resultado = await horarioDAO.deleteHorarioDisponivel(id);
+        let resultado = await clienteDAO.deleteCliente(id);
 
         if (resultado) {
             status = true;
             status_code = 200;
             mensagem.message = message.SUCCESS_DELETED_ITEM;
         } else {
-            status_code = 500;
-            mensagem.message = message.ERROR_INTERNAL_SERVER;
+            status_code = 400;
+            mensagem.message = "Não é possível excluir um cliente que possui agendamentos associados";
         }
     }
 
@@ -117,12 +111,12 @@ const deleteHorarioDisponivel = async function (id) {
 }
 
 // ====================== GET ======================
-const getHorariosDisponiveis = async function () {
+const getClientes = async function () {
     let status = false;
     let status_code;
     let mensagem = {};
 
-    let dados = await horarioDAO.selectAllHorariosDisponiveis();
+    let dados = await clienteDAO.selectAllClientes();
 
     if (dados) {
         if (dados.length > 0) {
@@ -141,12 +135,12 @@ const getHorariosDisponiveis = async function () {
     return {
         status: status,
         status_code: status_code,
-        horarios: mensagem.length ? mensagem : null,
+        clientes: mensagem.length ? mensagem : null,
         message: mensagem.message || null
     };
 }
 
-const getHorarioDisponivelById = async function (id) {
+const getClienteById = async function (id) {
     let status = false;
     let status_code;
     let mensagem = {};
@@ -155,7 +149,7 @@ const getHorarioDisponivelById = async function (id) {
         status_code = 400;
         mensagem.message = message.ERROR_INVALID_ID;
     } else {
-        let dados = await horarioDAO.selectHorarioDisponivelById(id);
+        let dados = await clienteDAO.selectClienteById(id);
 
         if (dados) {
             if (dados.length > 0) {
@@ -175,51 +169,17 @@ const getHorarioDisponivelById = async function (id) {
     return {
         status: status,
         status_code: status_code,
-        horario: mensagem.length ? mensagem[0] : null,
+        cliente: mensagem.length ? mensagem[0] : null,
         message: mensagem.message || null
     };
 }
 
-const getHorariosPorDiaSemana = async function (dia_semana) {
+const getClientesComAgendamentos = async function () {
     let status = false;
     let status_code;
     let mensagem = {};
 
-    if (dia_semana == '' || dia_semana == undefined) {
-        status_code = 400;
-        mensagem.message = "Dia da semana é obrigatório";
-    } else {
-        let dados = await horarioDAO.selectHorariosPorDiaSemana(dia_semana);
-
-        if (dados) {
-            if (dados.length > 0) {
-                status = true;
-                status_code = 200;
-                mensagem = dados;
-            } else {
-                status_code = 404;
-                mensagem.message = message.ERROR_NOT_FOUND;
-            }
-        } else {
-            status_code = 500;
-            mensagem.message = message.ERROR_INTERNAL_SERVER;
-        }
-    }
-
-    return {
-        status: status,
-        status_code: status_code,
-        horarios: mensagem.length ? mensagem : null,
-        message: mensagem.message || null
-    };
-}
-
-const getHorariosAtivos = async function () {
-    let status = false;
-    let status_code;
-    let mensagem = {};
-
-    let dados = await horarioDAO.selectHorariosAtivos();
+    let dados = await clienteDAO.selectClientesComAgendamentos();
 
     if (dados) {
         if (dados.length > 0) {
@@ -238,17 +198,51 @@ const getHorariosAtivos = async function () {
     return {
         status: status,
         status_code: status_code,
-        horarios: mensagem.length ? mensagem : null,
+        clientes: mensagem.length ? mensagem : null,
+        message: mensagem.message || null
+    };
+}
+
+const getClienteComAgendamentosById = async function (id) {
+    let status = false;
+    let status_code;
+    let mensagem = {};
+
+    if (id == '' || id == undefined || isNaN(id)) {
+        status_code = 400;
+        mensagem.message = message.ERROR_INVALID_ID;
+    } else {
+        let dados = await clienteDAO.selectClienteComAgendamentosById(id);
+
+        if (dados) {
+            if (dados.length > 0) {
+                status = true;
+                status_code = 200;
+                mensagem = dados;
+            } else {
+                status_code = 404;
+                mensagem.message = message.ERROR_NOT_FOUND;
+            }
+        } else {
+            status_code = 500;
+            mensagem.message = message.ERROR_INTERNAL_SERVER;
+        }
+    }
+
+    return {
+        status: status,
+        status_code: status_code,
+        cliente: mensagem.length ? mensagem[0] : null,
         message: mensagem.message || null
     };
 }
 
 module.exports = {
-    createHorarioDisponivel,
-    updateHorarioDisponivel,
-    deleteHorarioDisponivel,
-    getHorariosDisponiveis,
-    getHorarioDisponivelById,
-    getHorariosPorDiaSemana,
-    getHorariosAtivos
+    createCliente,
+    updateCliente,
+    deleteCliente,
+    getClientes,
+    getClienteById,
+    getClientesComAgendamentos,
+    getClienteComAgendamentosById
 }

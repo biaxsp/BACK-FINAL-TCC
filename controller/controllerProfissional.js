@@ -4,7 +4,7 @@
  * Autor --> Sistema de Agendamentos
  ****************************************************************************************/
 
-const profissionalDAO = require('../dao/ProfissionalDAO.js');
+const profissionalDAO = require('../dao/profissionaisDAO.js');
 const message = require('../config/config.js');
 
 // ====================== POST ======================
