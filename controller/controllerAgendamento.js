@@ -6,6 +6,10 @@
 
 const agendamentoDAO = require('../dao/agendamentosDAO.js');
 const message = require('../config/config.js');
+const WhatsAppService = require('../services/whatsappService.js');
+
+// Instância do serviço de WhatsApp
+const whatsappService = new WhatsAppService();
 
 // ====================== POST ======================
 const createAgendamento = async function (dadosBody, contentType) {
@@ -31,6 +35,40 @@ const createAgendamento = async function (dadosBody, contentType) {
                 status_code = 201;
                 mensagem.message = message.SUCCESS_CREATED_ITEM;
                 mensagem.agendamento = novoAgendamento;
+
+                // Enviar WhatsApp após criar agendamento com sucesso
+                try {
+                    console.log('📱 Iniciando envio de WhatsApp para agendamento:', novoAgendamento.id);
+                    
+                    // Preparar dados para WhatsApp
+                    const dadosWhatsApp = {
+                        id: novoAgendamento.id,
+                        cliente_nome: novoAgendamento.cliente_nome || 'Cliente',
+                        cliente_telefone: novoAgendamento.cliente_telefone || dadosBody.cliente_telefone,
+                        data_agendamento: novoAgendamento.data_agendamento,
+                        horario: novoAgendamento.horario,
+                        servico: novoAgendamento.nome_servico || 'Serviço MyBia',
+                        profissional: novoAgendamento.profissional_nome || 'Profissional MyBia',
+                        preco: novoAgendamento.preco || '0,00'
+                    };
+
+                    // Enviar WhatsApp de forma assíncrona (não bloquear resposta)
+                    whatsappService.enviarConfirmacaoAgendamento(dadosWhatsApp)
+                        .then(resultado => {
+                            if (resultado.success) {
+                                console.log('✅ WhatsApp enviado com sucesso para agendamento:', novoAgendamento.id);
+                            } else {
+                                console.log('⚠️ Falha no envio do WhatsApp:', resultado.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Erro crítico no WhatsApp:', error);
+                        });
+
+                } catch (error) {
+                    console.error('❌ Erro ao processar WhatsApp:', error);
+                    // Não falhar o agendamento por causa do WhatsApp
+                }
             } else {
                 status_code = 500;
                 mensagem.message = message.ERROR_INTERNAL_SERVER;

@@ -8,7 +8,11 @@
     "dev": "nodemon src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "prisma:reset": "prisma migrate reset",
+    "db:populate": "node populate-database.js",
+    "setup": "npm run prisma:generate && npm run prisma:migrate && npm run db:populate",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

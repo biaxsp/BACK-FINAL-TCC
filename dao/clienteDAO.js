@@ -10,6 +10,12 @@ const prisma = new PrismaClient();
 // ================================ INSERT =================================
 const insertCliente = async function (cliente) {
     try {
+        // Sanitização básica dos dados
+        const nome = cliente.nome ? cliente.nome.replace(/'/g, "''") : '';
+        const telefone = cliente.telefone ? cliente.telefone.replace(/'/g, "''") : '';
+        const email = cliente.email ? cliente.email.replace(/'/g, "''") : '';
+        const dataCadastro = cliente.data_cadastro || new Date().toISOString().split('T')[0];
+
         let sql = `
             INSERT INTO clientes (
                 nome,
@@ -17,10 +23,10 @@ const insertCliente = async function (cliente) {
                 email,
                 data_cadastro
             ) VALUES (
-                '${cliente.nome}',
-                '${cliente.telefone || ''}',
-                '${cliente.email || ''}',
-                '${cliente.data_cadastro || new Date().toISOString().split('T')[0]}'
+                '${nome}',
+                '${telefone}',
+                '${email}',
+                '${dataCadastro}'
             );
         `;
 
@@ -30,7 +36,7 @@ const insertCliente = async function (cliente) {
             let sqlSelect = `
                 SELECT * 
                 FROM clientes 
-                WHERE email = '${cliente.email}' 
+                WHERE nome = '${nome}' AND data_cadastro = '${dataCadastro}'
                 ORDER BY id DESC 
                 LIMIT 1;
             `;
@@ -48,7 +54,7 @@ const insertCliente = async function (cliente) {
         }
 
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao inserir cliente:', error);
         return false;
     }
 }
@@ -56,47 +62,23 @@ const insertCliente = async function (cliente) {
 // ================================ UPDATE =================================
 const updateCliente = async function (cliente) {
     try {
+        // Sanitização básica dos dados
+        const nome = cliente.nome ? cliente.nome.replace(/'/g, "''") : '';
+        const telefone = cliente.telefone ? cliente.telefone.replace(/'/g, "''") : '';
+        const email = cliente.email ? cliente.email.replace(/'/g, "''") : '';
+        const dataCadastro = cliente.data_cadastro || new Date().toISOString().split('T')[0];
+        const id = parseInt(cliente.id);
+
+        if (isNaN(id)) {
+            throw new Error('ID inválido');
+        }
+
         let sql = `
             UPDATE clientes SET
-                nome = '${cliente.nome}',
-                telefone = '${cliente.telefone || ''}',
-                email = '${cliente.email || ''}',
-                data_cadastro = '${cliente.data_cadastro}'
-            WHERE id = ${cliente.id};
-        `;
-
-        let result = await prisma.$executeRawUnsafe(sql);
-
-        if (result) {
-            return true;
-        } else {
-            return false;
-        }
-
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
-}
-
-// ================================ DELETE =================================
-const deleteCliente = async function (id) {
-    try {
-        // Verificar se existem agendamentos usando este cliente
-        let sqlCheck = `
-            SELECT COUNT(*) as count 
-            FROM agendamentos 
-            WHERE id_cliente = ${id};
-        `;
-        
-        let [{count}] = await prisma.$queryRawUnsafe(sqlCheck);
-        
-        if (count > 0) {
-            return false; // Não pode deletar cliente com agendamentos
-        }
-
-        let sql = `
-            DELETE FROM clientes 
+                nome = '${nome}',
+                telefone = '${telefone}',
+                email = '${email}',
+                data_cadastro = '${dataCadastro}'
             WHERE id = ${id};
         `;
 
@@ -109,7 +91,48 @@ const deleteCliente = async function (id) {
         }
 
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao atualizar cliente:', error);
+        return false;
+    }
+}
+
+// ================================ DELETE =================================
+const deleteCliente = async function (id) {
+    try {
+        const clienteId = parseInt(id);
+        
+        if (isNaN(clienteId)) {
+            throw new Error('ID inválido');
+        }
+
+        // Verificar se existem agendamentos usando este cliente
+        let sqlCheck = `
+            SELECT COUNT(*) as count 
+            FROM agendamentos 
+            WHERE id_cliente = ${clienteId};
+        `;
+        
+        let [{count}] = await prisma.$queryRawUnsafe(sqlCheck);
+        
+        if (count > 0) {
+            return false; // Não pode deletar cliente com agendamentos
+        }
+
+        let sql = `
+            DELETE FROM clientes 
+            WHERE id = ${clienteId};
+        `;
+
+        let result = await prisma.$executeRawUnsafe(sql);
+
+        if (result) {
+            return true;
+        } else {
+            return false;
+        }
+
+    } catch (error) {
+        console.error('Erro ao deletar cliente:', error);
         return false;
     }
 }
@@ -117,32 +140,27 @@ const deleteCliente = async function (id) {
 // ================================ SELECT =================================
 const selectAllClientes = async function () {
     try {
-        let sql = `
-            SELECT * FROM clientes;
-        `;
-
+        let sql = `SELECT * FROM clientes ORDER BY nome`;
         let rsClientes = await prisma.$queryRawUnsafe(sql);
-
         return rsClientes;
-
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao buscar clientes:', error);
         return false;
     }
 }
 
 const selectClienteById = async function (id) {
     try {
-        let sql = `
-            SELECT * FROM clientes WHERE id = ${id};
-        `;
-
+        const clienteId = parseInt(id);
+        if (isNaN(clienteId)) {
+            return false;
+        }
+        
+        let sql = `SELECT * FROM clientes WHERE id = ${clienteId}`;
         let rsCliente = await prisma.$queryRawUnsafe(sql);
-
         return rsCliente;
-
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao buscar cliente por ID:', error);
         return false;
     }
 }
@@ -191,13 +209,18 @@ const selectClientesComAgendamentos = async function () {
         return rsClientes;
 
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao buscar clientes com agendamentos:', error);
         return false;
     }
 }
 
 const selectClienteComAgendamentosById = async function (id) {
     try {
+        const clienteId = parseInt(id);
+        if (isNaN(clienteId)) {
+            return false;
+        }
+
         let sql = `
             SELECT 
                 c.id,
@@ -221,7 +244,7 @@ const selectClienteComAgendamentosById = async function (id) {
             LEFT JOIN agendamentos a ON a.id_cliente = c.id
             LEFT JOIN servicos s ON s.id = a.id_servico
             LEFT JOIN profissionais p ON p.id = a.id_profissional
-            WHERE c.id = ${id}
+            WHERE c.id = ${clienteId}
             GROUP BY c.id, c.nome, c.telefone, c.email, c.data_cadastro;
         `;
 
@@ -240,7 +263,7 @@ const selectClienteComAgendamentosById = async function (id) {
         return rsCliente;
 
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao buscar cliente com agendamentos por ID:', error);
         return false;
     }
 }

@@ -4,8 +4,34 @@
  * Autor --> Sistema de Agendamentos
  ****************************************************************************************/
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database.js');
+
+// Função helper para formatar horários
+const formatarHorarios = (horarios) => {
+    if (!horarios) return horarios;
+    
+    if (Array.isArray(horarios)) {
+        return horarios.map(horario => formatarHorario(horario));
+    } else {
+        return formatarHorario(horarios);
+    }
+};
+
+const formatarHorario = (horario) => {
+    if (!horario) return horario;
+    
+    return {
+        ...horario,
+        id: Number(horario.id),
+        horario_inicio: horario.horario_inicio instanceof Date ? 
+            horario.horario_inicio.toTimeString().split(' ')[0] : 
+            horario.horario_inicio,
+        horario_fim: horario.horario_fim instanceof Date ? 
+            horario.horario_fim.toTimeString().split(' ')[0] : 
+            horario.horario_fim,
+        disponivel: Boolean(horario.disponivel)
+    };
+};
 
 // ================================ INSERT =================================
 const insertHorarioDisponivel = async function (horario) {
@@ -38,10 +64,7 @@ const insertHorarioDisponivel = async function (horario) {
             let horarioCriado = await prisma.$queryRawUnsafe(sqlSelect);
             
             if (horarioCriado && horarioCriado.length > 0) {
-                return {
-                    ...horarioCriado[0],
-                    id: Number(horarioCriado[0].id)
-                };
+                return formatarHorario(horarioCriado[0]);
             }
             return false;
         } else {
@@ -130,7 +153,7 @@ const selectHorarioDisponivelById = async function (id) {
 
         let rsHorario = await prisma.$queryRawUnsafe(sql);
 
-        return rsHorario;
+        return formatarHorarios(rsHorario);
 
     } catch (error) {
         console.error(error);
@@ -148,7 +171,7 @@ const selectHorariosPorDiaSemana = async function (dia_semana) {
 
         let rsHorarios = await prisma.$queryRawUnsafe(sql);
 
-        return rsHorarios;
+        return formatarHorarios(rsHorarios);
 
     } catch (error) {
         console.error(error);
@@ -168,7 +191,7 @@ const selectHorariosAtivos = async function () {
 
         let rsHorarios = await prisma.$queryRawUnsafe(sql);
 
-        return rsHorarios;
+        return formatarHorarios(rsHorarios);
 
     } catch (error) {
         console.error(error);

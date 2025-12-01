@@ -1,5 +1,20 @@
 // Função para converter a duração em formato "1h 30 min" para minutos
 const parseDuracao = (duracao) => {
+    // Se duracao é undefined, null ou vazio, retorna null
+    if (!duracao || duracao === '') {
+        return null;
+    }
+
+    // Se já é um número, retorna ele mesmo (assumindo que já está em minutos)
+    if (typeof duracao === 'number') {
+        return duracao;
+    }
+
+    // Se não é string, tenta converter para string
+    if (typeof duracao !== 'string') {
+        duracao = String(duracao);
+    }
+
     const regex = /(\d+)\s*h\s*(\d+)\s*min/;
     const match = duracao.match(regex);
 
@@ -16,12 +31,42 @@ const parseDuracao = (duracao) => {
         return parseInt(duracao.replace("min", "").trim());  // Retorna minutos
     }
 
-    return 0;  // Se não conseguir identificar o formato, retorna 0
+    // Se é um número em formato string, retorna como número
+    const numeroSimples = parseInt(duracao);
+    if (!isNaN(numeroSimples)) {
+        return numeroSimples;
+    }
+
+    return null;  // Se não conseguir identificar o formato, retorna null
 };
 
 // Função para converter o preço de string para número (com vírgula para ponto)
 const parsePreco = (preco) => {
-    return parseFloat(preco.replace(",", "."));
+    // Se preco é undefined, null ou vazio, retorna null
+    if (!preco || preco === '') {
+        return null;
+    }
+
+    // Se já é um número, retorna ele mesmo
+    if (typeof preco === 'number') {
+        return preco;
+    }
+
+    // Se não é string, tenta converter para string
+    if (typeof preco !== 'string') {
+        preco = String(preco);
+    }
+
+    // Remove espaços e substitui vírgula por ponto
+    const precoLimpo = preco.trim().replace(",", ".");
+    const numeroConvertido = parseFloat(precoLimpo);
+    
+    // Se a conversão falhou, retorna null
+    if (isNaN(numeroConvertido)) {
+        return null;
+    }
+    
+    return numeroConvertido;
 };
 
 module.exports = { parseDuracao, parsePreco };

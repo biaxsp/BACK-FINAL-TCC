@@ -10,6 +10,12 @@ const prisma = new PrismaClient();
 // ================================ INSERT =================================
 const insertServico = async function (servico) {
     try {
+        // Sanitização básica dos dados
+        const nomeServico = servico.nome_servico ? servico.nome_servico.replace(/'/g, "''") : '';
+        const descricao = servico.descricao ? servico.descricao.replace(/'/g, "''") : '';
+        const duracao = servico.duracao ? parseInt(servico.duracao) : null;
+        const preco = servico.preco ? parseFloat(servico.preco) : null;
+
         let sql = `
             INSERT INTO servicos (
                 nome_servico,
@@ -17,10 +23,10 @@ const insertServico = async function (servico) {
                 duracao,
                 preco
             ) VALUES (
-                '${servico.nome_servico}',
-                '${servico.descricao || ''}',
-                ${servico.duracao || 'NULL'},
-                ${servico.preco || 'NULL'}
+                '${nomeServico}',
+                '${descricao}',
+                ${duracao || 'NULL'},
+                ${preco || 'NULL'}
             );
         `;
 
@@ -30,7 +36,7 @@ const insertServico = async function (servico) {
             let sqlSelect = `
                 SELECT * 
                 FROM servicos 
-                WHERE nome_servico = '${servico.nome_servico}' 
+                WHERE nome_servico = '${nomeServico}' 
                 ORDER BY id DESC 
                 LIMIT 1;
             `;
@@ -48,7 +54,7 @@ const insertServico = async function (servico) {
         }
 
     } catch (error) {
-        console.error(error);
+        console.error('Erro ao inserir serviço:', error);
         return false;
     }
 }

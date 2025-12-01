@@ -4,8 +4,7 @@
  * Autor --> Sistema de Agendamentos
  ****************************************************************************************/
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database.js');
 
 // ================================ INSERT =================================
 const insertProfissional = async function (profissional) {

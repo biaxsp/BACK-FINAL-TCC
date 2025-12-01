@@ -37,13 +37,11 @@ const bodyParser = require('body-parser');
 const app = express();
 
 // Configuração do CORS
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    app.use(cors());
-    next();
-});
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Configuração do body-parser
 app.use(bodyParser.json());
@@ -55,6 +53,34 @@ const servicoController = require('./controller/controllerServiço.js');
 const profissionalController = require('./controller/controllerProfissional.js');
 const agendamentoController = require('./controller/controllerAgendamento.js');
 const horarioController = require('./controller/controllerHorarios.js');
+
+/************************************************************************************************
+ * ROTA DE STATUS E DOCUMENTAÇÃO
+ ************************************************************************************************/
+
+// GET - Status da API
+app.get('/v1', cors(), (req, res) => {
+    res.status(200).json({
+        status: 'online',
+        message: 'API Sistema de Agendamentos v1.0.0',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            clientes: '/v1/clientes',
+            servicos: '/v1/servicos', 
+            profissionais: '/v1/profissionais',
+            agendamentos: '/v1/agendamentos',
+            horarios: '/v1/horarios'
+        }
+    });
+});
+
+// GET - Health check
+app.get('/health', cors(), (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString()
+    });
+});
 
 /************************************************************************************************
  * ROTAS DE CLIENTES
@@ -313,6 +339,74 @@ app.delete('/v1/horario/:id', cors(), async (req, res) => {
     let id = req.params.id;
     let dados = await horarioController.deleteHorarioDisponivel(id);
     res.status(dados.status_code).json(dados);
+});
+
+/************************************************************************************************
+ * ROTAS DE WHATSAPP (TESTE E CONFIGURAÇÃO)
+ ************************************************************************************************/
+
+// Importar serviço de WhatsApp
+const WhatsAppService = require('./services/whatsappService.js');
+const whatsappService = new WhatsAppService();
+
+// GET - Testar envio de WhatsApp
+app.get('/v1/whatsapp/test/:phone', cors(), async (req, res) => {
+    try {
+        let phone = req.params.phone;
+        
+        if (!phone) {
+            return res.status(400).json({
+                status: false,
+                message: 'Número de telefone é obrigatório'
+            });
+        }
+
+        let resultado = await whatsappService.testarEnvio(phone);
+        
+        res.status(200).json({
+            status: resultado.success,
+            message: resultado.success ? 'Teste enviado com sucesso' : 'Falha no envio',
+            details: resultado
+        });
+
+    } catch (error) {
+        console.error('Erro no teste de WhatsApp:', error);
+        res.status(500).json({
+            status: false,
+            message: 'Erro interno no servidor',
+            error: error.message
+        });
+    }
+});
+
+// POST - Enviar WhatsApp manual
+app.post('/v1/whatsapp/send', cors(), async (req, res) => {
+    try {
+        let { phone, message } = req.body;
+        
+        if (!phone || !message) {
+            return res.status(400).json({
+                status: false,
+                message: 'Telefone e mensagem são obrigatórios'
+            });
+        }
+
+        let resultado = await whatsappService.sendMessageCallMeBot(phone, message);
+        
+        res.status(200).json({
+            status: resultado.success,
+            message: resultado.success ? 'Mensagem enviada com sucesso' : 'Falha no envio',
+            details: resultado
+        });
+
+    } catch (error) {
+        console.error('Erro ao enviar WhatsApp manual:', error);
+        res.status(500).json({
+            status: false,
+            message: 'Erro interno no servidor',
+            error: error.message
+        });
+    }
 });
 
 module.exports = app;

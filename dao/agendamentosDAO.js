@@ -4,8 +4,33 @@
  * Autor --> Sistema de Agendamentos
  ****************************************************************************************/
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database.js');
+
+// Função helper para formatar horários em agendamentos
+const formatarAgendamentos = (agendamentos) => {
+    if (!agendamentos) return agendamentos;
+    
+    if (Array.isArray(agendamentos)) {
+        return agendamentos.map(agendamento => formatarAgendamento(agendamento));
+    } else {
+        return formatarAgendamento(agendamentos);
+    }
+};
+
+const formatarAgendamento = (agendamento) => {
+    if (!agendamento) return agendamento;
+    
+    return {
+        ...agendamento,
+        id: Number(agendamento.id),
+        horario: agendamento.horario instanceof Date ? 
+            agendamento.horario.toTimeString().split(' ')[0] : 
+            agendamento.horario,
+        data_agendamento: agendamento.data_agendamento instanceof Date ?
+            agendamento.data_agendamento.toISOString().split('T')[0] :
+            agendamento.data_agendamento
+    };
+};
 
 // ================================ INSERT =================================
 const insertAgendamento = async function (agendamento) {
@@ -36,7 +61,10 @@ const insertAgendamento = async function (agendamento) {
             let sqlSelect = `
                 SELECT a.*, 
                        c.nome as cliente_nome,
+                       c.telefone as cliente_telefone,
+                       c.email as cliente_email,
                        s.nome_servico,
+                       s.preco,
                        p.nome as profissional_nome
                 FROM agendamentos a
                 JOIN clientes c ON c.id = a.id_cliente
@@ -51,10 +79,7 @@ const insertAgendamento = async function (agendamento) {
             let agendamentoCriado = await prisma.$queryRawUnsafe(sqlSelect);
             
             if (agendamentoCriado && agendamentoCriado.length > 0) {
-                return {
-                    ...agendamentoCriado[0],
-                    id: Number(agendamentoCriado[0].id)
-                };
+                return formatarAgendamento(agendamentoCriado[0]);
             }
             return false;
         } else {
@@ -172,7 +197,7 @@ const selectAgendamentoById = async function (id) {
 
         let rsAgendamento = await prisma.$queryRawUnsafe(sql);
 
-        return rsAgendamento;
+        return formatarAgendamentos(rsAgendamento);
 
     } catch (error) {
         console.error(error);
